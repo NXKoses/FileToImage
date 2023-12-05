@@ -324,7 +324,6 @@ namespace FileToImg
 
         private async void ToPictureButton_DragDrop(object sender, DragEventArgs e)
         {
-            FileAttributes attr;
             string[]? files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
 
             //nullチェック
@@ -336,40 +335,7 @@ namespace FileToImg
                 return;
             }
 
-            attr = File.GetAttributes(files[0]);
-            if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
-            {
-                MessageBox.Show("フォルダーは入力出来ません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            //ファイルパス設定
-            ConvertInfo.InputFilePath = files[0];
-
-            //ファイル情報を取得
-            byte[]? bytes = await Task.Run(() => FileToBinary(files[0]));
-            ConvertInfo.OutputImageSize = GetXYSize(bytes.Length);
-            ConvertInfo.InputFileSize = bytes.Length;
-
-            bytes = null;
-            GC.Collect();
-
-            //infoを更新
-            ShowInfoBox(ConvertInfo);
-        }
-
-        /// <summary>
-        /// 入力ファイル選択ダイアログを開きます。
-        /// </summary>
-        private void InputFIlePathSelectMenuOpen(object sender, EventArgs e)
-        {
-            DialogResult result = openFileDialog1.ShowDialog();
-
-            if (result == DialogResult.OK)
-            {
-                ConvertInfo.InputFilePath = openFileDialog1.FileName;
-                ShowInfoBox(ConvertInfo);
-            }
+            await ToPictureButton_FormInfoUpdate(files[0]);
         }
 
         private void ToFileButton_DragEnter(object sender, DragEventArgs e)
@@ -389,7 +355,6 @@ namespace FileToImg
 
         private void ToFileButton_DragDrop(object sender, DragEventArgs e)
         {
-            FileAttributes attr;
             string[]? files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
 
             //nullチェック
@@ -401,7 +366,49 @@ namespace FileToImg
                 return;
             }
 
-            attr = File.GetAttributes(files[0]);
+            //情報更新
+            ToFileButton_FormInfoUpdate(files[0]);
+        }
+
+        /// <summary>
+        /// ファイルから画像に変換するボタンをクリックした際に、Formのファイルサイズなどの情報を更新します。
+        /// </summary>
+        /// <param name="filepath">変換ファイルパス</param>
+        private async Task ToPictureButton_FormInfoUpdate(string filepath)
+        {
+            FileAttributes attr;
+
+            attr = File.GetAttributes(filepath);
+            if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
+            {
+                MessageBox.Show("フォルダーは入力出来ません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            //ファイルパス設定
+            ConvertInfo.InputFilePath = filepath;
+
+            //ファイル情報を取得
+            byte[]? bytes = await Task.Run(() => FileToBinary(filepath));
+            ConvertInfo.OutputImageSize = GetXYSize(bytes.Length);
+            ConvertInfo.InputFileSize = bytes.Length;
+
+            bytes = null;
+            GC.Collect();
+
+            //infoを更新
+            ShowInfoBox(ConvertInfo);
+        }
+
+        /// <summary>
+        /// 画像からファイルに変換するボタンをクリックした際に、Formのファイルサイズなどの情報を更新します。
+        /// </summary>
+        /// <param name="filepath"></param>
+        private void ToFileButton_FormInfoUpdate(string filepath)
+        {
+            FileAttributes attr;
+
+            attr = File.GetAttributes(filepath);
             if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
             {
                 MessageBox.Show("フォルダーは入力出来ません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -409,8 +416,28 @@ namespace FileToImg
             }
 
             //infoを更新
-            ConvertInfo.InputFilePath = files[0];
+            ConvertInfo.InputFilePath = filepath;
             ShowInfoBox(ConvertInfo);
+        }
+
+        /// <summary>
+        /// 入力ファイル選択ダイアログを開きます。
+        /// </summary>
+        private async void InputFIlePathSelectMenuOpen(object sender, EventArgs e)
+        {
+            DialogResult result = openFileDialog1.ShowDialog();
+
+            if (result == DialogResult.OK)
+            {
+                ConvertInfo.InputFilePath = openFileDialog1.FileName;
+                ShowInfoBox(ConvertInfo);
+
+                //ファイルサイズなどの情報を設定 (ファイル→画像モードの時)
+                if (tabControl1.SelectedIndex == 0)
+                {
+                    await ToPictureButton_FormInfoUpdate(openFileDialog1.FileName);
+                }
+            }
         }
 
         /// <summary>
