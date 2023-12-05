@@ -11,7 +11,9 @@ namespace FileToImg
 {
     public partial class MainWindow : Form
     {
+        //Listboxに表示する情報をまとめた構造体
         ConvertInfo ConvertInfo = new();
+        //変換中かどうか
         bool IsCoverting = false;
 
         public MainWindow()
@@ -64,7 +66,10 @@ namespace FileToImg
 
                 //バイナリデータを画像に変換
                 ChangeProgressText(3);
-                await Task.Run(() => BinaryToImage(compbyte, ConvertInfo.OutputFolderPath + "\\バイナリ画像.png"));
+
+                //ファイル名を設定
+                string savePath = SetSaveFileName(ConvertInfo.OutputFolderPath, "バイナリ画像", ".png");
+                await Task.Run(() => BinaryToImage(compbyte, savePath));
             }
 
             //画像→ファイル　モードの時
@@ -77,7 +82,7 @@ namespace FileToImg
                 //バイト配列が空の場合は何もしない = エラー
                 if (bytes.Length <= 0)
                 {
-                    ChangeProgressText(-1);
+                    MessageBox.Show("ファイルの復元に失敗しました。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     IsCoverting = false;
                     return;
                 }
@@ -88,11 +93,36 @@ namespace FileToImg
 
                 //バイナリデータをファイルに書き込み
                 ChangeProgressText(6);
-                await Task.Run(() => File.WriteAllBytes(ConvertInfo.OutputFolderPath + "\\復元.bin", bytes));
+
+                //ファイル名を設定
+                string savePath = SetSaveFileName(ConvertInfo.OutputFolderPath);
+                await Task.Run(() => File.WriteAllBytes(savePath, bytes));
             }
 
             ChangeProgressText(0);
             IsCoverting = false;
+        }
+
+        /// <summary>
+        /// 保存ディレクトリに同名のファイルがあった場合、連番をつけてファイルパスを返します。
+        /// </summary>
+        /// <param name="filePath">保存先</param>
+        /// <param name="fileName">保存名（拡張子を含む）</param>
+        /// <param name="ext">拡張子</param>
+        /// <returns>保存ファイルパス</returns>
+        private string SetSaveFileName(string filePath, string fileName = "復元", string ext = ".bin")
+        {
+            string savePath = filePath + "\\" + fileName + ext;
+
+            //もし保存先に同じファイル名があったら連番をつける
+            int i = 1;
+            while (File.Exists(savePath))
+            {
+                savePath = filePath + "\\" + fileName + "(" + i + ")" + ext;
+                i++;
+            }
+
+            return savePath;
         }
 
         /// <summary>
@@ -107,13 +137,17 @@ namespace FileToImg
 
             try
             {
-                bs = File.ReadAllBytes(filePath);
-                Debug.WriteLine("読み込んだバイト数: " + bs.Length);
+                //バイナリデータを読み込み
+                using FileStream fs = new(filePath, FileMode.Open, FileAccess.Read);
+
+                bs = new byte[fs.Length];
+                fs.Read(bs, 0, bs.Length);
+                fs.Close();
+                fs.Dispose();
             }
-            catch (IOException)
+            catch (Exception e)
             {
-                ChangeProgressText(-1);
-                MessageBox.Show("2GB以上のファイルは読み込めません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("バイナリ変換でエラーが発生しました。" + Environment.NewLine + e, "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return [];
             }
 
@@ -275,6 +309,9 @@ namespace FileToImg
         /// <param name="e"></param>
         private void ToPictureButton_DragEnter(object sender, DragEventArgs e)
         {
+            //nullチェック
+            if (e.Data is null) return;
+
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 e.Effect = DragDropEffects.Copy;
@@ -288,7 +325,7 @@ namespace FileToImg
         private async void ToPictureButton_DragDrop(object sender, DragEventArgs e)
         {
             FileAttributes attr;
-            var files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            string[]? files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
 
             //nullチェック
             if (files is null) return;
@@ -310,9 +347,12 @@ namespace FileToImg
             ConvertInfo.InputFilePath = files[0];
 
             //ファイル情報を取得
-            byte[] bytes = await Task.Run(() => FileToBinary(files[0]));
+            byte[]? bytes = await Task.Run(() => FileToBinary(files[0]));
             ConvertInfo.OutputImageSize = GetXYSize(bytes.Length);
             ConvertInfo.InputFileSize = bytes.Length;
+
+            bytes = null;
+            GC.Collect();
 
             //infoを更新
             ShowInfoBox(ConvertInfo);
@@ -334,6 +374,9 @@ namespace FileToImg
 
         private void ToFileButton_DragEnter(object sender, DragEventArgs e)
         {
+            //nullチェック
+            if (e.Data is null) return;
+
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 e.Effect = DragDropEffects.Copy;
@@ -347,7 +390,7 @@ namespace FileToImg
         private void ToFileButton_DragDrop(object sender, DragEventArgs e)
         {
             FileAttributes attr;
-            var files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            string[]? files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
 
             //nullチェック
             if (files is null) return;
@@ -421,11 +464,6 @@ namespace FileToImg
                     break;
                 case 6:
                     progressTextBox.Text = "3/3 ファイル書き込み中";
-                    break;
-
-
-                case -1:
-                    progressTextBox.Text = "!!! エラーが発生しました。";
                     break;
 
                 default:
