@@ -62,14 +62,14 @@ namespace FileToImg
 
                 //バイナリデータを圧縮
                 ChangeProgressText(2);
-                byte[] compbyte = await Task.Run(() => ByteCompress(bytes));
+                bytes = await Task.Run(() => ByteCompress(bytes));
 
                 //バイナリデータを画像に変換
                 ChangeProgressText(3);
 
                 //ファイル名を設定
                 string savePath = SetSaveFileName(ConvertInfo.OutputFolderPath, "バイナリ画像", ".png");
-                await Task.Run(() => BinaryToImage(compbyte, savePath));
+                await Task.Run(() => BinaryToImage(bytes, savePath));
             }
 
             //画像→ファイル　モードの時
@@ -178,20 +178,17 @@ namespace FileToImg
                     for (int x = 0; x < pixelRow.Length; x++)
                     {
                         ref Rgb24 pixel = ref pixelRow[x];
-                        Rgb24 transparent;
 
                         //あまりの部分は0埋めする
                         if (bs.Length <= cnt)
                         {
-                            transparent = SixLabors.ImageSharp.Color.FromRgb(0, 0, 0);
-                            pixel = transparent;
+                            pixel = SixLabors.ImageSharp.Color.FromRgb(0, 0, 0);
 
                             cnt++;
                             continue;
                         }
 
-                        transparent = SixLabors.ImageSharp.Color.FromRgb(bs[cnt], bs[cnt], bs[cnt]);
-                        pixel = transparent;
+                        pixel = SixLabors.ImageSharp.Color.FromRgb(bs[cnt], bs[cnt], bs[cnt]);
 
                         //Debug.WriteLine("x: " + x + ", y: " + y + ", colorcode: " + bs[cnt] + ", cnt: " + cnt);
                         cnt++;
