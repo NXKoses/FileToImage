@@ -104,7 +104,7 @@
             selectoutputfolderbutton.TabIndex = 5;
             selectoutputfolderbutton.Text = "出力フォルダ選択";
             selectoutputfolderbutton.UseVisualStyleBackColor = true;
-            selectoutputfolderbutton.Click += selectoutputfolderbutton_Click;
+            selectoutputfolderbutton.Click += Selectoutputfolderbutton_Click;
             // 
             // tabControl1
             // 
@@ -115,7 +115,7 @@
             tabControl1.SelectedIndex = 0;
             tabControl1.Size = new Size(495, 133);
             tabControl1.TabIndex = 6;
-            tabControl1.SelectedIndexChanged += tabControl1_SelectedIndexChanged;
+            tabControl1.SelectedIndexChanged += TabControl1_SelectedIndexChanged;
             // 
             // tabPage1
             // 

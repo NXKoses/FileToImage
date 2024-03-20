@@ -110,7 +110,7 @@ namespace FileToImg
         /// <param name="fileName">保存名（拡張子を含む）</param>
         /// <param name="ext">拡張子</param>
         /// <returns>保存ファイルパス</returns>
-        private string SetSaveFileName(string filePath, string fileName = "復元", string ext = ".bin")
+        private static string SetSaveFileName(string filePath, string fileName = "復元", string ext = ".bin")
         {
             string savePath = filePath + "\\" + fileName + ext;
 
@@ -158,7 +158,7 @@ namespace FileToImg
         /// 16進数のバイト配列をカラーコードに変換、その後画像として保存します。
         /// </summary>
         /// <param name="bs">バイナリデータ</param>
-        private void BinaryToImage(byte[] bs, string savePath)
+        private static void BinaryToImage(byte[] bs, string savePath)
         {
             //バイナリデータから画像のサイズを決定
             SixLabors.ImageSharp.Point size = GetXYSize(bs.Length);
@@ -268,7 +268,7 @@ namespace FileToImg
         /// </summary>
         /// <param name="cnt">バイナリデータの量 ("1A" で１つ)</param>
         /// <returns>XとYの情報が入ったImageSharp.Point</returns>
-        private SixLabors.ImageSharp.Point GetXYSize(int cnt)
+        private static SixLabors.ImageSharp.Point GetXYSize(int cnt)
         {
             cnt = (int)((cnt / 2.0) + 0.9);
 
@@ -498,7 +498,7 @@ namespace FileToImg
             }
         }
 
-        private void selectoutputfolderbutton_Click(object sender, EventArgs e)
+        private void Selectoutputfolderbutton_Click(object sender, EventArgs e)
         {
             // ダイアログのインスタンスを生成
             using CommonOpenFileDialog dialog = new("フォルダーの選択")
@@ -523,7 +523,7 @@ namespace FileToImg
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        private void TabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
             ConvertInfo.Mode = tabControl1.SelectedIndex == 0 ? "ファイル→画像" : "画像→ファイル";
             ShowInfoBox(ConvertInfo);
